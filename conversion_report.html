@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>動画変換レポート</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+      background: #f5f7fa;
+      color: #1e293b;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%);
+      color: #fff;
+      padding: 40px 20px 32px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: clamp(22px, 5vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .header .date {
+      margin-top: 6px;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    /* ---- Section ---- */
+    .section {
+      margin-bottom: 28px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    /* ---- Card ---- */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+
+    /* ---- Settings grid ---- */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .setting-item {
+      padding: 14px 18px;
+      border-bottom: 1px solid #f1f5f9;
+      border-right: 1px solid #f1f5f9;
+    }
+    .setting-item:nth-child(even) { border-right: none; }
+    .setting-item:nth-last-child(-n+2) { border-bottom: none; }
+    .setting-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+    }
+    .setting-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    /* ---- Summary cards ---- */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: clamp(20px, 4.5vw, 28px);
+      font-weight: 800;
+      color: #1e293b;
+      line-height: 1.1;
+    }
+    .stat-value.green { color: #16a34a; }
+    .stat-sub {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    /* ---- Tables ---- */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 13.5px;
+      min-width: 560px;
+    }
+    thead th {
+      background: #f8fafc;
+      padding: 11px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td.center { text-align: center; }
+
+    /* row number */
+    td.rownum {
+      color: #94a3b8;
+      font-size: 12px;
+      width: 32px;
+      text-align: center;
+    }
+
+    /* reduction bar */
+    .bar-cell { min-width: 120px; }
+    .bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .bar-bg {
+      flex: 1;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #4ade80, #16a34a);
+    }
+    .bar-pct {
+      font-size: 12px;
+      font-weight: 700;
+      color: #16a34a;
+      min-width: 42px;
+      text-align: right;
+    }
+
+    /* badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-ok { background: #dcfce7; color: #15803d; }
+
+    /* ---- Footer ---- */
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 32px;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 600px) {
+      .settings-grid { grid-template-columns: 1fr; }
+      .setting-item { border-right: none; }
+      .setting-item:nth-last-child(-n+2) { border-bottom: 1px solid #f1f5f9; }
+      .setting-item:last-child { border-bottom: none; }
+
+      .summary-grid { grid-template-columns: 1fr; gap: 10px; }
+      .stat-card { padding: 16px; }
+      .stat-value { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>動画変換レポート</h1>
+  <div class="date">2026年6月15日</div>
+</div>
+
+<div class="container">
+
+  <!-- 変換設定 -->
+  <div class="section">
+    <div class="section-title">変換設定</div>
+    <div class="card">
+      <div class="settings-grid">
+        <div class="setting-item">
+          <div class="setting-label">出力形式</div>
+          <div class="setting-value">MP4</div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">映像コーデック</div>
+          <div class="setting-value">H.264 (libx264)</div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">解像度</div>
+          <div class="setting-value">720p（縦横比維持）</div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">フレームレート</div>
+          <div class="setting-value">30 fps</div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">映像ビットレート</div>
+          <div class="setting-value">2 Mbps</div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label">音声</div>
+          <div class="setting-value">AAC 128 kbps</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- サマリー -->
+  <div class="section">
+    <div class="section-title">集計サマリー</div>
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="stat-value">14 / 14</div>
+        <div class="stat-sub">変換成功</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">2,847 MB<br>→ 302 MB</div>
+        <div class="stat-sub">容量変化</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value green">−89.4%</div>
+        <div class="stat-sub">合計削減率</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 変換結果テーブル -->
+  <div class="section">
+    <div class="section-title">変換結果</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>ファイル名</th>
+            <th>変換前</th>
+            <th>変換後</th>
+            <th>削減率</th>
+            <th>処理時間</th>
+            <th>状態</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rownum">1</td>
+            <td>LimitTime.MP4</td>
+            <td class="num">426.5 MB</td>
+            <td class="num">15.4 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:96.4%"></div></div>
+                <span class="bar-pct">−96.4%</span>
+              </div>
+            </td>
+            <td class="num">153s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">2</td>
+            <td>qaNo5-Q3-1.MP4</td>
+            <td class="num">262.1 MB</td>
+            <td class="num">11.7 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:95.5%"></div></div>
+                <span class="bar-pct">−95.5%</span>
+              </div>
+            </td>
+            <td class="num">92s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">3</td>
+            <td>qaNo5-Q3-2.MP4</td>
+            <td class="num">256.1 MB</td>
+            <td class="num">11.4 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:95.5%"></div></div>
+                <span class="bar-pct">−95.5%</span>
+              </div>
+            </td>
+            <td class="num">86s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">4</td>
+            <td>qaNo6.MP4</td>
+            <td class="num">188.1 MB</td>
+            <td class="num">7.8 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:95.8%"></div></div>
+                <span class="bar-pct">−95.8%</span>
+              </div>
+            </td>
+            <td class="num">59s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">5</td>
+            <td>コース発表no01.MOV</td>
+            <td class="num">182.4 MB</td>
+            <td class="num">28.6 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:84.3%"></div></div>
+                <span class="bar-pct">−84.3%</span>
+              </div>
+            </td>
+            <td class="num">155s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">6</td>
+            <td>コース発表no02.MOV</td>
+            <td class="num">186.4 MB</td>
+            <td class="num">27.6 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:85.2%"></div></div>
+                <span class="bar-pct">−85.2%</span>
+              </div>
+            </td>
+            <td class="num">153s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">7</td>
+            <td>コース発表no03.MP4</td>
+            <td class="num">175.1 MB</td>
+            <td class="num">27.1 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:84.5%"></div></div>
+                <span class="bar-pct">−84.5%</span>
+              </div>
+            </td>
+            <td class="num">154s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">8</td>
+            <td>コース発表no05.MP4</td>
+            <td class="num">141.3 MB</td>
+            <td class="num">31.0 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:78.1%"></div></div>
+                <span class="bar-pct">−78.1%</span>
+              </div>
+            </td>
+            <td class="num">173s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">9</td>
+            <td>コース発表no06.MP4</td>
+            <td class="num">115.8 MB</td>
+            <td class="num">24.0 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:79.3%"></div></div>
+                <span class="bar-pct">−79.3%</span>
+              </div>
+            </td>
+            <td class="num">132s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">10</td>
+            <td>コース発表no07.MP4</td>
+            <td class="num">169.1 MB</td>
+            <td class="num">28.6 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:83.1%"></div></div>
+                <span class="bar-pct">−83.1%</span>
+              </div>
+            </td>
+            <td class="num">159s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">11</td>
+            <td>コース発表no08.MOV</td>
+            <td class="num">149.2 MB</td>
+            <td class="num">23.1 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:84.5%"></div></div>
+                <span class="bar-pct">−84.5%</span>
+              </div>
+            </td>
+            <td class="num">121s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">12</td>
+            <td>コース発表no09.MOV</td>
+            <td class="num">217.8 MB</td>
+            <td class="num">21.4 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:90.2%"></div></div>
+                <span class="bar-pct">−90.2%</span>
+              </div>
+            </td>
+            <td class="num">123s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">13</td>
+            <td>コース発表no10.MP4</td>
+            <td class="num">256.1 MB</td>
+            <td class="num">25.8 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:89.9%"></div></div>
+                <span class="bar-pct">−89.9%</span>
+              </div>
+            </td>
+            <td class="num">173s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+          <tr>
+            <td class="rownum">14</td>
+            <td>course.MOV</td>
+            <td class="num">121.5 MB</td>
+            <td class="num">18.2 MB</td>
+            <td class="bar-cell">
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" style="width:85.0%"></div></div>
+                <span class="bar-pct">−85.0%</span>
+              </div>
+            </td>
+            <td class="num">108s</td>
+            <td class="center"><span class="badge badge-ok">✅ OK</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 変換前詳細テーブル -->
+  <div class="section">
+    <div class="section-title">変換前ファイル詳細</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>ファイル名</th>
+            <th>解像度</th>
+            <th>コーデック</th>
+            <th>FPS</th>
+            <th>容量</th>
+            <th>尺</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rownum">1</td>
+            <td>LimitTime.MP4</td>
+            <td>3840×2160 (4K)</td>
+            <td>H.264</td>
+            <td class="num">60</td>
+            <td class="num">426.5 MB</td>
+            <td class="num">63.5s</td>
+          </tr>
+          <tr>
+            <td class="rownum">2</td>
+            <td>qaNo5-Q3-1.MP4</td>
+            <td>3840×2160 (4K)</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">262.1 MB</td>
+            <td class="num">45.7s</td>
+          </tr>
+          <tr>
+            <td class="rownum">3</td>
+            <td>qaNo5-Q3-2.MP4</td>
+            <td>3840×2160 (4K)</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">256.1 MB</td>
+            <td class="num">44.4s</td>
+          </tr>
+          <tr>
+            <td class="rownum">4</td>
+            <td>qaNo6.MP4</td>
+            <td>3840×2160 (4K)</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">188.1 MB</td>
+            <td class="num">32.9s</td>
+          </tr>
+          <tr>
+            <td class="rownum">5</td>
+            <td>コース発表no01.MOV</td>
+            <td>1920×1080</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">182.4 MB</td>
+            <td class="num">117.6s</td>
+          </tr>
+          <tr>
+            <td class="rownum">6</td>
+            <td>コース発表no02.MOV</td>
+            <td>1920×1080</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">186.4 MB</td>
+            <td class="num">116.7s</td>
+          </tr>
+          <tr>
+            <td class="rownum">7</td>
+            <td>コース発表no03.MP4</td>
+            <td>1920×1080</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">175.1 MB</td>
+            <td class="num">111.0s</td>
+          </tr>
+          <tr>
+            <td class="rownum">8</td>
+            <td>コース発表no05.MP4</td>
+            <td>1920×1080</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">141.3 MB</td>
+            <td class="num">125.9s</td>
+          </tr>
+          <tr>
+            <td class="rownum">9</td>
+            <td>コース発表no06.MP4</td>
+            <td>1920×1080</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">115.8 MB</td>
+            <td class="num">100.8s</td>
+          </tr>
+          <tr>
+            <td class="rownum">10</td>
+            <td>コース発表no07.MP4</td>
+            <td>1920×1080</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">169.1 MB</td>
+            <td class="num">120.2s</td>
+          </tr>
+          <tr>
+            <td class="rownum">11</td>
+            <td>コース発表no08.MOV</td>
+            <td>1920×1080</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">149.2 MB</td>
+            <td class="num">93.6s</td>
+          </tr>
+          <tr>
+            <td class="rownum">12</td>
+            <td>コース発表no09.MOV</td>
+            <td>1920×1080</td>
+            <td>H.264</td>
+            <td class="num">60</td>
+            <td class="num">217.8 MB</td>
+            <td class="num">84.8s</td>
+          </tr>
+          <tr>
+            <td class="rownum">13</td>
+            <td>コース発表no10.MP4</td>
+            <td>1920×888</td>
+            <td>H.264</td>
+            <td class="num">60</td>
+            <td class="num">256.1 MB</td>
+            <td class="num">100.3s</td>
+          </tr>
+          <tr>
+            <td class="rownum">14</td>
+            <td>course.MOV</td>
+            <td>1920×888</td>
+            <td>H.264</td>
+            <td class="num">30</td>
+            <td class="num">121.5 MB</td>
+            <td class="num">70.8s</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>生成: FFmpeg 8.1.1 / Claude Code</footer>
+
+</div>
+</body>
+</html>
